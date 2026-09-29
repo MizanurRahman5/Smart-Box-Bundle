@@ -5,30 +5,67 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
-// enough when changing adapters.
-// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
-  provider = "sqlite"
-  url      = "file:dev.sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Session {
-  id            String    @id
-  shop          String
-  state         String
-  isOnline      Boolean   @default(false)
-  scope         String?
-  expires       DateTime?
-  accessToken   String
-  userId        BigInt?
-  firstName     String?
-  lastName      String?
-  email         String?
-  accountOwner  Boolean   @default(false)
-  locale        String?
-  collaborator  Boolean?  @default(false)
-  emailVerified Boolean?  @default(false)
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
   refreshToken        String?
   refreshTokenExpires DateTime?
+}
+
+// Module A: Customizer Options
+model CustomOption {
+  id        String   @id @default(uuid())
+  shop      String
+  productId String?  // null হলে সব product-এ দেখাবে
+  title     String
+  type      String   // "select", "text", "swatch"
+  required  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  values    Json     // [{ label, image, price, variantId }]
+  createdAt DateTime @default(now())
+
+  @@index([shop])
+}
+
+// Module B: Gift Box Bundles
+model BundleConfig {
+  id           String   @id @default(uuid())
+  shop         String
+  title        String // e.g. "Create Your Gift Box"
+  boxSizes     Json // Capacity thresholds (3-pack, 5-pack)
+  discountType String // "percentage", "fixed"
+  discountVal  Float
+  createdAt    DateTime @default(now())
+}
+
+// Module C: Reviews System
+model ProductReview {
+  id         String   @id @default(uuid())
+  shop       String
+  productId  String
+  author     String
+  email      String?
+  rating     Int
+  comment    String
+  mediaUrls  String[] // Photos uploaded by customers
+  isApproved Boolean  @default(false)
+  createdAt  DateTime @default(now())
 }
