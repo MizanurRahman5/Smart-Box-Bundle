@@ -3,23 +3,24 @@ import { randomUUID } from "node:crypto";
 import { useLoaderData, useFetcher, useNavigate } from "react-router";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
+import { syncAddonConfig } from "../utils/syncConfig.server";
 
 async function getGroup(request, params) {
-  const { session } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
   const group = await prisma.customOption.findFirst({
     where: { id: params.id, shop: session.shop },
   });
   if (!group) throw new Response("Not found", { status: 404 });
-  return group;
+  return { group, admin, shop: session.shop };
 }
 
 export const loader = async ({ request, params }) => {
-  const group = await getGroup(request, params);
+  const { group } = await getGroup(request, params);
   return { group };
 };
 
 export const action = async ({ request, params }) => {
-  const group = await getGroup(request, params);
+  const { group, admin, shop } = await getGroup(request, params);
   const form = await request.formData();
   const intent = form.get("intent");
   const values = Array.isArray(group.values) ? group.values : [];
@@ -42,6 +43,7 @@ export const action = async ({ request, params }) => {
     where: { id: group.id },
     data: { values: next },
   });
+  await syncAddonConfig(admin, shop);
   return { ok: true };
 };
 
@@ -55,7 +57,8 @@ export default function Choices() {
   const [image, setImage] = useState("");
   const [price, setPrice] = useState("0");
 
-  const isSaving = fetcher.state !== "idle" && fetcher.formData?.get("intent") === "add";
+  const isSaving =
+    fetcher.state !== "idle" && fetcher.formData?.get("intent") === "add";
 
   const handleAdd = () => {
     if (!label.trim()) return;
@@ -67,7 +70,10 @@ export default function Choices() {
 
   return (
     <s-page heading={group.title} inlineSize="large">
-      <s-button slot="secondary-actions" onClick={() => navigate("/app/options")}>
+      <s-button
+        slot="secondary-actions"
+        onClick={() => navigate("/app/options")}
+      >
         Back to options
       </s-button>
 
@@ -108,7 +114,8 @@ export default function Choices() {
             {choices.length === 0 ? (
               <s-box padding="large">
                 <s-text tone="neutral">
-                  No choices yet. Add your first one using the panel on the left.
+                  No choices yet. Add your first one using the panel on the
+                  left.
                 </s-text>
               </s-box>
             ) : (
@@ -123,7 +130,11 @@ export default function Choices() {
                   {choices.map((c) => (
                     <s-table-row key={c.id}>
                       <s-table-cell>
-                        {c.image ? <s-thumbnail src={c.image} size="small" alt={c.label} /> : "—"}
+                        {c.image ? (
+                          <s-thumbnail src={c.image} size="small" alt={c.label} />
+                        ) : (
+                          "—"
+                        )}
                       </s-table-cell>
                       <s-table-cell>{c.label}</s-table-cell>
                       <s-table-cell>

@@ -1,0 +1,94 @@
+{% assign config = app.metafields.addons.config.value %}
+
+{% if config != blank %}
+  <div class="sbb-customizer">
+    {% for group in config %}
+      {% if group.productId == blank %}
+        <fieldset class="sbb-group">
+          <legend class="sbb-legend">
+            {{ group.title }}{% if group.required %} <span class="sbb-req">*</span>{% endif %}
+          </legend>
+
+          {% if group.type == 'swatch' %}
+            <div class="sbb-swatches">
+              {% for choice in group.choices %}
+                <label class="sbb-swatch-label" title="{{ choice.label }}">
+                  <input
+                    type="radio"
+                    name="properties[{{ group.title }}]"
+                    value="{{ choice.label }}"
+                    form="product-form-{{ section.id }}"
+                    {% if group.required %}required{% endif %}
+                  >
+                  <span class="sbb-swatch">
+                    {% if choice.image != blank %}
+                      <img src="{{ choice.image }}" alt="{{ choice.label }}" loading="lazy">
+                    {% else %}
+                      <span class="sbb-swatch-text">{{ choice.label }}</span>
+                    {% endif %}
+                  </span>
+                </label>
+              {% endfor %}
+            </div>
+
+          {% elsif group.type == 'select' %}
+            <select
+              class="sbb-field"
+              name="properties[{{ group.title }}]"
+              form="product-form-{{ section.id }}"
+              {% if group.required %}required{% endif %}
+            >
+              <option value="">Choose...</option>
+              {% for choice in group.choices %}
+                <option value="{{ choice.label }}">
+                  {{ choice.label }}{% if choice.price > 0 %} (+{{ choice.price | times: 100 | money }}){% endif %}
+                </option>
+              {% endfor %}
+            </select>
+
+          {% else %}
+            <input
+              class="sbb-field"
+              type="text"
+              name="properties[{{ group.title }}]"
+              placeholder="Type here"
+              form="product-form-{{ section.id }}"
+              {% if group.required %}required{% endif %}
+            >
+          {% endif %}
+        </fieldset>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endif %}
+
+<style>
+  .sbb-customizer { margin: 16px 0; }
+  .sbb-group { border: 0; padding: 0; margin: 0 0 16px; }
+  .sbb-legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
+  .sbb-req { color: #d72c0d; }
+  .sbb-swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+  .sbb-swatch-label { position: relative; cursor: pointer; }
+  .sbb-swatch-label input { position: absolute; opacity: 0; pointer-events: none; }
+  .sbb-swatch {
+    display: flex; align-items: center; justify-content: center;
+    width: 52px; height: 52px; border-radius: 50%;
+    border: 2px solid #d9d9d9; overflow: hidden; background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .sbb-swatch img { width: 100%; height: 100%; object-fit: cover; }
+  .sbb-swatch-text { font-size: 11px; text-align: center; padding: 0 4px; }
+  .sbb-swatch-label input:checked + .sbb-swatch {
+    border-color: #111; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #111;
+  }
+  .sbb-swatch-label input:focus-visible + .sbb-swatch { outline: 2px solid #111; outline-offset: 3px; }
+  .sbb-field { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 4px; font: inherit; }
+</style>
+
+{% schema %}
+{
+  "name": "Product Customizer",
+  "target": "section",
+  "settings": []
+}
+{% endschema %}
