@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLoaderData, useFetcher } from "react-router";
+import { useLoaderData, useFetcher, useNavigate } from "react-router";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 
@@ -52,6 +52,7 @@ export const action = async ({ request }) => {
 export default function Options() {
   const { options } = useLoaderData();
   const fetcher = useFetcher();
+  const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
   const [type, setType] = useState("select");
@@ -145,13 +146,21 @@ export default function Options() {
                         </s-badge>
                       </s-table-cell>
                       <s-table-cell>
-                        <s-button
-                          tone="critical"
-                          variant="tertiary"
-                          onClick={() => handleDelete(o.id)}
-                        >
-                          Delete
-                        </s-button>
+                        <s-stack direction="inline" gap="small-200">
+                          <s-button
+                            variant="tertiary"
+                            onClick={() => navigate(`/app/options/${o.id}`)}
+                          >
+                            Manage choices
+                          </s-button>
+                          <s-button
+                            tone="critical"
+                            variant="tertiary"
+                            onClick={() => handleDelete(o.id)}
+                          >
+                            Delete
+                          </s-button>
+                        </s-stack>
                       </s-table-cell>
                     </s-table-row>
                   ))}
