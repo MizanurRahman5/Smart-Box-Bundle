@@ -1,11 +1,19 @@
-{% assign avg_rating = block.settings.product.metafields.demo.avg_rating.value | round %}
-<span style="color:{{ block.settings.colour }}">
-  {% render 'stars', rating: avg_rating %}
-</span>
-{% if avg_rating >= 4 %}
-  <br>
-  <img src="{{ "thumbs-up.png" | asset_img_url: '15x' }}" height="15" width="15" loading="lazy">
-  {{ 'ratings.home.recommendationText' | t }}
+{% assign product_obj = block.settings.product | default: product %}
+{% assign rating_value = product_obj.metafields.sbb_reviews.rating.value | default: 0 %}
+{% assign rating_count = product_obj.metafields.sbb_reviews.count.value | default: 0 %}
+
+{% if rating_count > 0 %}
+  <div class="sbb-star-rating-wrapper" style="display: inline-flex; align-items: center; gap: 6px; margin: 6px 0; font-size: 14px;">
+    <span style="color: {{ block.settings.colour | default: '#ffb800' }}; font-size: 16px;">
+      {% assign rounded_rating = rating_value | round %}
+      {% for i in (1..5) %}
+        {% if i <= rounded_rating %}★{% else %}☆{% endif %}
+      {% endfor %}
+    </span>
+    <span style="color: #555; font-weight: 600;">
+      {{ rating_value }} ({{ rating_count }})
+    </span>
+  </div>
 {% endif %}
 
 {% schema %}
@@ -13,9 +21,8 @@
   "name": "Star Rating",
   "target": "section",
   "settings": [
-    { "type": "product", "id": "product", "label": "product", "autofill": true },
-    { "type": "color", "id": "colour", "label": "Star Colour", "default": "#ff0000" }
+    { "type": "product", "id": "product", "label": "Product", "autofill": true },
+    { "type": "color", "id": "colour", "label": "Star Colour", "default": "#ffb800" }
   ]
 }
 {% endschema %}
-

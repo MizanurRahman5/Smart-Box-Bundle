@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLoaderData, useFetcher } from "react-router";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
+import { syncProductRating } from "../utils/syncRating.server";
 
 export const loader = async ({ request }) => {
   const { admin, session } = await authenticate.admin(request);
@@ -41,11 +42,18 @@ export const loader = async ({ request }) => {
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
   const form = await request.formData();
   const intent = form.get("intent");
   const id = form.get("id");
   const where = { id, shop: session.shop };
+
+  // মোছার আগেই জেনে নিতে হবে review-টা কোন product-এর
+  const review = await prisma.productReview.findFirst({
+    where,
+    select: { productId: true },
+  });
+  if (!review) return { ok: false };
 
   if (intent === "approve") {
     await prisma.productReview.updateMany({
@@ -61,7 +69,14 @@ export const action = async ({ request }) => {
     await prisma.productReview.deleteMany({ where });
   }
 
-  return { ok: true };
+  // product-এর গড় রেটিং Shopify-র খাতায় নতুন করে লেখা
+  try {
+    await syncProductRating(admin, session.shop, review.productId);
+    return { ok: true, synced: true };
+  } catch (e) {
+    console.error("Could not sync product rating", e);
+    return { ok: true, syncError: String(e.message || e) };
+  }
 };
 
 function Stat({ label, value }) {
@@ -97,6 +112,16 @@ export default function Reviews() {
   return (
     <s-page heading="Customer Reviews" inlineSize="large">
       <s-stack gap="base">
+        {fetcher.data?.syncError ? (
+          <s-banner tone="critical" heading="Could not update the product rating">
+            <s-text>{fetcher.data.syncError}</s-text>
+          </s-banner>
+        ) : fetcher.data?.synced ? (
+          <s-banner tone="success" heading="Product rating updated on your store">
+            <s-text>The product's average rating was saved.</s-text>
+          </s-banner>
+        ) : null}
+
         <s-grid gridTemplateColumns="repeat(3, 1fr)" gap="base">
           <Stat label="Waiting for approval" value={pending.length} />
           <Stat label="Approved" value={approved.length} />
