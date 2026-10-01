@@ -5,6 +5,124 @@ import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 import { syncAddonConfig } from "../utils/syncConfig.server";
 
+const ADDON_TAG = "smart-box-addon";
+
+function assertNoErrors(errors) {
+  if (errors && errors.length) throw new Error(JSON.stringify(errors));
+}
+
+// ★ পরিবর্তন ১: শেষে `image` parameter যোগ হয়েছে
+async function createAddonProduct(admin, label, price, image) {
+  // 1. লুকানো (Unlisted) product বানানো
+  const createRes = await admin.graphql(
+    `#graphql
+    mutation CreateAddon($product: ProductCreateInput!) {
+      productCreate(product: $product) {
+        product {
+          id
+          variants(first: 1) { nodes { id } }
+        }
+        userErrors { field message }
+      }
+    }`,
+    {
+      variables: {
+        product: {
+          title: `${label} (Add-on)`,
+          status: "UNLISTED",
+          productType: "Add-on",
+          tags: [ADDON_TAG],
+        },
+      },
+    },
+  );
+  const created = (await createRes.json()).data.productCreate;
+  assertNoErrors(created.userErrors);
+  const productId = created.product.id;
+  const variantGid = created.product.variants.nodes[0].id;
+
+  // 2. দাম বসানো
+  const priceRes = await admin.graphql(
+    `#graphql
+    mutation SetPrice($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+      productVariantsBulkUpdate(productId: $productId, variants: $variants) {
+        userErrors { field message }
+      }
+    }`,
+    {
+      variables: {
+        productId,
+        variants: [{ id: variantGid, price: price.toFixed(2) }],
+      },
+    },
+  );
+  assertNoErrors((await priceRes.json()).data.productVariantsBulkUpdate.userErrors);
+
+  // ★ পরিবর্তন ২: ছবি যোগ করা (ব্যর্থ হলেও add-on তৈরি আটকাবে না)
+  if (image) {
+    try {
+      const mediaRes = await admin.graphql(
+        `#graphql
+        mutation AddImage($product: ProductUpdateInput!, $media: [CreateMediaInput!]) {
+          productUpdate(product: $product, media: $media) {
+            userErrors { field message }
+          }
+        }`,
+        {
+          variables: {
+            product: { id: productId },
+            media: [
+              {
+                originalSource: image,
+                alt: label,
+                mediaContentType: "IMAGE",
+              },
+            ],
+          },
+        },
+      );
+      const errs = (await mediaRes.json()).data?.productUpdate?.userErrors;
+      if (errs?.length) console.error("Add-on image error", errs);
+    } catch (e) {
+      console.error("Could not add add-on image", e);
+    }
+  }
+
+  // 3. Online Store-এ প্রকাশ করা
+  const pubRes = await admin.graphql(
+    `#graphql
+    query { publications(first: 20) { nodes { id name } } }`,
+  );
+  const pubs = (await pubRes.json()).data.publications.nodes;
+  const online = pubs.find((p) => p.name === "Online Store");
+  if (online) {
+    const publishRes = await admin.graphql(
+      `#graphql
+      mutation Publish($id: ID!, $input: [PublicationInput!]!) {
+        publishablePublish(id: $id, input: $input) {
+          userErrors { field message }
+        }
+      }`,
+      { variables: { id: productId, input: [{ publicationId: online.id }] } },
+    );
+    assertNoErrors((await publishRes.json()).data.publishablePublish.userErrors);
+  }
+
+  return { productId, variantId: variantGid.split("/").pop() };
+}
+
+async function deleteAddonProduct(admin, productId) {
+  await admin.graphql(
+    `#graphql
+    mutation DeleteAddon($input: ProductDeleteInput!) {
+      productDelete(input: $input) {
+        userErrors { field message }
+      }
+    }`,
+    { variables: { input: { id: productId } } },
+  );
+}
+
 async function getGroup(request, params) {
   const { admin, session } = await authenticate.admin(request);
   const group = await prisma.customOption.findFirst({
@@ -31,11 +149,36 @@ export const action = async ({ request, params }) => {
     if (!label) return { ok: false };
     const price = Math.max(0, Number(form.get("price")) || 0);
     const image = (form.get("image") || "").toString().trim();
+
+    let variantId = null;
+    let addonProductId = null;
+    if (price > 0) {
+      // ★ পরিবর্তন ৩: এখানে `image` পাঠানো হচ্ছে
+      const addon = await createAddonProduct(admin, label, price, image);
+      variantId = addon.variantId;
+      addonProductId = addon.productId;
+    }
+
     next = [
       ...values,
-      { id: randomUUID(), label, image: image || null, price, variantId: null },
+      {
+        id: randomUUID(),
+        label,
+        image: image || null,
+        price,
+        variantId,
+        addonProductId,
+      },
     ];
   } else if (intent === "delete") {
+    const target = values.find((v) => v.id === form.get("valueId"));
+    if (target?.addonProductId) {
+      try {
+        await deleteAddonProduct(admin, target.addonProductId);
+      } catch (e) {
+        console.error("Could not delete add-on product", e);
+      }
+    }
     next = values.filter((v) => v.id !== form.get("valueId"));
   }
 

@@ -4,7 +4,7 @@ const TABS = [
   { label: "Home", path: "/app", exact: true },
   { label: "Customizer", path: "/app/options" },
   { label: "Gift Boxes", soon: true },
-  { label: "Reviews", soon: true },
+  { label: "Reviews", path: "/app/reviews" },
 ];
 
 export default function NavBar() {

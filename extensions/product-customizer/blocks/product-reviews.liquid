@@ -1,0 +1,347 @@
+<div class="sbb-rev" id="sbb-rev-{{ block.id }}" data-product-id="{{ product.id }}">
+  <h2 class="sbb-rev-title">{{ block.settings.heading }}</h2>
+
+  <div class="sbb-rev-top">
+    <div class="sbb-rev-col sbb-rev-col--score">
+      <div class="sbb-rev-scoreline">
+        <span class="sbb-stars sbb-stars--big" aria-hidden="true"><span class="sbb-stars-fill" data-fill style="width:0%">★★★★★</span>★★★★★</span>
+        <span class="sbb-rev-avg" data-avg></span>
+      </div>
+      <div class="sbb-rev-based" data-count>Loading reviews...</div>
+    </div>
+
+    <div class="sbb-rev-col sbb-rev-col--bars" data-bars></div>
+
+    <div class="sbb-rev-col sbb-rev-col--cta">
+      <button type="button" class="sbb-rev-write" data-toggle>Write a review</button>
+    </div>
+  </div>
+
+  <form class="sbb-rev-form" data-form hidden>
+    <input type="hidden" name="product_id" value="{{ product.id }}">
+
+    <div class="sbb-rev-field">
+      <span class="sbb-rev-label">Your rating *</span>
+      <div class="sbb-rev-pick" role="radiogroup" aria-label="Rating">
+        <input type="radio" id="sbb-r5-{{ block.id }}" name="rating" value="5"><label for="sbb-r5-{{ block.id }}" title="5 stars">★</label>
+        <input type="radio" id="sbb-r4-{{ block.id }}" name="rating" value="4"><label for="sbb-r4-{{ block.id }}" title="4 stars">★</label>
+        <input type="radio" id="sbb-r3-{{ block.id }}" name="rating" value="3"><label for="sbb-r3-{{ block.id }}" title="3 stars">★</label>
+        <input type="radio" id="sbb-r2-{{ block.id }}" name="rating" value="2"><label for="sbb-r2-{{ block.id }}" title="2 stars">★</label>
+        <input type="radio" id="sbb-r1-{{ block.id }}" name="rating" value="1"><label for="sbb-r1-{{ block.id }}" title="1 star">★</label>
+      </div>
+    </div>
+
+    <div class="sbb-rev-field">
+      <label class="sbb-rev-label" for="sbb-name-{{ block.id }}">Your name *</label>
+      <input class="sbb-rev-input" id="sbb-name-{{ block.id }}" type="text" name="author" maxlength="60" required>
+    </div>
+
+    <div class="sbb-rev-field">
+      <label class="sbb-rev-label" for="sbb-email-{{ block.id }}">Email (optional, never shown)</label>
+      <input class="sbb-rev-input" id="sbb-email-{{ block.id }}" type="email" name="email" maxlength="120">
+    </div>
+
+    <div class="sbb-rev-field">
+      <label class="sbb-rev-label" for="sbb-comment-{{ block.id }}">Your review *</label>
+      <textarea class="sbb-rev-input" id="sbb-comment-{{ block.id }}" name="comment" rows="4" maxlength="1000" required></textarea>
+    </div>
+
+    <div class="sbb-rev-trap" aria-hidden="true">
+      <input type="text" name="website" tabindex="-1" autocomplete="off">
+    </div>
+
+    <p class="sbb-rev-msg" data-msg role="alert"></p>
+    <button type="submit" class="sbb-rev-write sbb-rev-write--form" data-submit>Submit review</button>
+  </form>
+
+  <p class="sbb-rev-thanks" data-thanks hidden>
+    Thank you! Your review has been received and will appear once it is approved.
+  </p>
+
+  <div class="sbb-rev-sortbar" data-sortbar hidden>
+    <select class="sbb-rev-sort" data-sort aria-label="Sort reviews">
+      <option value="recent">Most Recent</option>
+      <option value="high">Highest Rating</option>
+      <option value="low">Lowest Rating</option>
+    </select>
+  </div>
+
+  <div class="sbb-rev-list" data-list></div>
+  <nav class="sbb-rev-pages" data-pages aria-label="Review pages"></nav>
+</div>
+
+<style>
+  .sbb-rev { margin: 40px auto; max-width: 1100px; padding: 0 16px; }
+  .sbb-rev-title { text-align: center; font-weight: 400; margin: 0 0 24px; }
+
+  .sbb-rev-top {
+    display: grid; grid-template-columns: 1fr 1.2fr 1fr; align-items: center;
+    padding-bottom: 24px; border-bottom: 1px solid #e5e5e5;
+  }
+  .sbb-rev-col { padding: 8px 24px; }
+  .sbb-rev-col--score { text-align: center; }
+  .sbb-rev-col--bars { border-left: 1px solid #e5e5e5; border-right: 1px solid #e5e5e5; }
+  .sbb-rev-col--cta { text-align: center; }
+  .sbb-rev-scoreline { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .sbb-rev-based { color: #666; margin-top: 4px; }
+
+  .sbb-stars { position: relative; display: inline-block; color: #ddd; letter-spacing: 2px; line-height: 1; font-size: 18px; white-space: nowrap; }
+  .sbb-stars--big { font-size: 22px; }
+  .sbb-stars-fill { position: absolute; left: 0; top: 0; overflow: hidden; white-space: nowrap; color: #f5b301; }
+
+  .sbb-bar-row { display: grid; grid-template-columns: auto 1fr 28px; align-items: center; gap: 12px; margin: 6px 0; }
+  .sbb-bar-stars { color: #f5b301; letter-spacing: 1px; font-size: 14px; white-space: nowrap; }
+  .sbb-bar-track { display: block; height: 12px; background: #eee; border-radius: 2px; overflow: hidden; }
+  .sbb-bar-fill { display: block; height: 100%; background: #111; }
+  .sbb-bar-num { font-size: 12px; color: #555; text-align: right; }
+
+  .sbb-rev-write {
+    display: inline-block; min-width: 240px; padding: 12px 20px;
+    background: #111; color: #fff; border: 0; border-radius: 0;
+    cursor: pointer; font: inherit; font-weight: 700;
+  }
+  .sbb-rev-write--form { min-width: 0; }
+  .sbb-rev-write[disabled] { opacity: .6; cursor: default; }
+
+  .sbb-rev-form { max-width: 640px; margin: 24px auto; padding: 16px; border: 1px solid #e5e5e5; }
+  .sbb-rev-form[hidden], .sbb-rev-thanks[hidden], .sbb-rev-sortbar[hidden] { display: none; }
+  .sbb-rev-field { margin-bottom: 12px; }
+  .sbb-rev-label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 14px; }
+  .sbb-rev-input { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 0; font: inherit; box-sizing: border-box; }
+  .sbb-rev-trap { position: absolute; left: -9999px; height: 0; overflow: hidden; }
+  .sbb-rev-msg { color: #d72c0d; font-size: 14px; margin: 0 0 10px; }
+  .sbb-rev-thanks { max-width: 640px; margin: 16px auto; padding: 12px 14px; background: #eaf7ee; color: #1b5e20; }
+
+  .sbb-rev-pick { display: inline-flex; flex-direction: row-reverse; }
+  .sbb-rev-pick input { position: absolute; opacity: 0; pointer-events: none; }
+  .sbb-rev-pick label { font-size: 30px; color: #ccc; cursor: pointer; padding: 0 2px; line-height: 1; }
+  .sbb-rev-pick input:checked ~ label,
+  .sbb-rev-pick label:hover,
+  .sbb-rev-pick label:hover ~ label { color: #f5b301; }
+  .sbb-rev-pick input:focus-visible + label { outline: 2px solid #111; outline-offset: 2px; }
+
+  .sbb-rev-sortbar { padding: 14px 0; border-bottom: 1px solid #e5e5e5; }
+  .sbb-rev-sort { border: 0; background: transparent; font: inherit; cursor: pointer; padding: 4px 0; }
+
+  .sbb-rev-item { padding: 20px 0; border-bottom: 1px solid #e5e5e5; }
+  .sbb-rev-row1 { display: flex; justify-content: space-between; align-items: center; }
+  .sbb-rev-date { color: #777; font-size: 12px; }
+  .sbb-rev-who { display: flex; align-items: center; gap: 10px; margin: 10px 0 12px; }
+  .sbb-rev-avatar { width: 36px; height: 36px; background: #eee; display: inline-flex; align-items: center; justify-content: center; border-radius: 2px; }
+  .sbb-rev-text { margin: 0; white-space: pre-line; line-height: 1.6; }
+  .sbb-rev-empty { color: #666; text-align: center; padding: 24px 0; }
+
+  .sbb-rev-pages { display: flex; justify-content: center; gap: 14px; padding: 22px 0 0; }
+  .sbb-rev-pages button { background: none; border: 0; cursor: pointer; font: inherit; padding: 2px 4px; color: #555; }
+  .sbb-rev-pages button[aria-current="page"] { color: #111; font-weight: 700; }
+  .sbb-rev-pages button[disabled] { opacity: .35; cursor: default; }
+
+  @media (max-width: 749px) {
+    .sbb-rev-top { grid-template-columns: 1fr; }
+    .sbb-rev-col--bars { border: 0; border-top: 1px solid #e5e5e5; border-bottom: 1px solid #e5e5e5; margin: 12px 0; }
+  }
+</style>
+
+<script>
+  (function () {
+    var root = document.getElementById('sbb-rev-{{ block.id }}');
+    if (!root || root.dataset.sbbBound) return;
+    root.dataset.sbbBound = '1';
+
+    var PER_PAGE = 5;
+    var productId = root.dataset.productId;
+    var base = ((window.Shopify && window.Shopify.routes && window.Shopify.routes.root) || '/') + 'apps/sbb-reviews/reviews';
+
+    var el = {
+      fill: root.querySelector('[data-fill]'),
+      avg: root.querySelector('[data-avg]'),
+      count: root.querySelector('[data-count]'),
+      bars: root.querySelector('[data-bars]'),
+      list: root.querySelector('[data-list]'),
+      pages: root.querySelector('[data-pages]'),
+      sortbar: root.querySelector('[data-sortbar]'),
+      sort: root.querySelector('[data-sort]'),
+      toggle: root.querySelector('[data-toggle]'),
+      form: root.querySelector('[data-form]'),
+      msg: root.querySelector('[data-msg]'),
+      submit: root.querySelector('[data-submit]'),
+      thanks: root.querySelector('[data-thanks]')
+    };
+
+    var state = { summary: null, reviews: [], sort: 'recent', page: 1 };
+
+    var AVATAR = '<span class="sbb-rev-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"></circle><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"></path></svg></span>';
+
+    function esc(s) {
+      var d = document.createElement('div');
+      d.textContent = s == null ? '' : String(s);
+      return d.innerHTML;
+    }
+
+    function fmtDate(iso) {
+      var p = String(iso).slice(0, 10).split('-');
+      return p.length === 3 ? p[1] + '/' + p[2] + '/' + p[0] : '';
+    }
+
+    function starsHtml(n) {
+      var pct = Math.max(0, Math.min(5, n)) / 5 * 100;
+      return '<span class="sbb-stars" aria-label="' + n + ' out of 5"><span class="sbb-stars-fill" style="width:' + pct + '%">★★★★★</span>★★★★★</span>';
+    }
+
+    function renderSummary() {
+      var s = state.summary || { count: 0, average: 0, distribution: {} };
+      var d = s.distribution || {};
+
+      el.fill.style.width = (s.average / 5 * 100) + '%';
+      if (s.count > 0) {
+        el.avg.textContent = s.average.toFixed(2) + ' out of 5';
+        el.count.textContent = 'Based on ' + s.count + (s.count === 1 ? ' review' : ' reviews');
+      } else {
+        el.avg.textContent = '';
+        el.count.textContent = 'No reviews yet';
+      }
+
+      var rows = '';
+      for (var n = 5; n >= 1; n--) {
+        var c = d[n] || 0;
+        var pct = s.count ? (c / s.count * 100) : 0;
+        rows += '<div class="sbb-bar-row">' +
+          '<span class="sbb-bar-stars" aria-label="' + n + ' stars">' + '★'.repeat(n) + '☆'.repeat(5 - n) + '</span>' +
+          '<span class="sbb-bar-track"><span class="sbb-bar-fill" style="width:' + pct + '%"></span></span>' +
+          '<span class="sbb-bar-num">' + c + '</span></div>';
+      }
+      el.bars.innerHTML = rows;
+    }
+
+    function sorted() {
+      var arr = state.reviews.slice();
+      var byDate = function (a, b) { return new Date(b.createdAt) - new Date(a.createdAt); };
+      if (state.sort === 'high') {
+        arr.sort(function (a, b) { return (b.rating - a.rating) || byDate(a, b); });
+      } else if (state.sort === 'low') {
+        arr.sort(function (a, b) { return (a.rating - b.rating) || byDate(a, b); });
+      } else {
+        arr.sort(byDate);
+      }
+      return arr;
+    }
+
+    function renderPages(pages) {
+      if (pages <= 1) { el.pages.innerHTML = ''; return; }
+      var html = '';
+      for (var i = 1; i <= pages; i++) {
+        html += '<button type="button" data-page="' + i + '"' + (i === state.page ? ' aria-current="page"' : '') + '>' + i + '</button>';
+      }
+      var last = state.page === pages;
+      html += '<button type="button" data-page="' + (state.page + 1) + '"' + (last ? ' disabled' : '') + ' aria-label="Next page">›</button>';
+      html += '<button type="button" data-page="' + pages + '"' + (last ? ' disabled' : '') + ' aria-label="Last page">»</button>';
+      el.pages.innerHTML = html;
+    }
+
+    function renderList() {
+      var all = sorted();
+      el.sortbar.hidden = all.length === 0;
+
+      if (!all.length) {
+        el.list.innerHTML = '<p class="sbb-rev-empty">Be the first to write a review.</p>';
+        el.pages.innerHTML = '';
+        return;
+      }
+
+      var pages = Math.ceil(all.length / PER_PAGE);
+      if (state.page > pages) state.page = pages;
+      var slice = all.slice((state.page - 1) * PER_PAGE, state.page * PER_PAGE);
+
+      el.list.innerHTML = slice.map(function (r) {
+        return '<article class="sbb-rev-item">' +
+          '<div class="sbb-rev-row1">' + starsHtml(r.rating) +
+          '<span class="sbb-rev-date">' + esc(fmtDate(r.createdAt)) + '</span></div>' +
+          '<div class="sbb-rev-who">' + AVATAR + '<span class="sbb-rev-name">' + esc(r.author) + '</span></div>' +
+          '<p class="sbb-rev-text">' + esc(r.comment) + '</p></article>';
+      }).join('');
+
+      renderPages(pages);
+    }
+
+    function load() {
+      fetch(base + '?product_id=' + encodeURIComponent(productId), { headers: { 'Accept': 'application/json' } })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          state.summary = data.summary;
+          state.reviews = data.reviews || [];
+          renderSummary();
+          renderList();
+        })
+        .catch(function () {
+          el.count.textContent = '';
+          el.list.innerHTML = '<p class="sbb-rev-empty">Reviews could not be loaded right now.</p>';
+        });
+    }
+
+    el.sort.addEventListener('change', function () {
+      state.sort = el.sort.value;
+      state.page = 1;
+      renderList();
+    });
+
+    el.pages.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-page]');
+      if (!b || b.disabled) return;
+      state.page = parseInt(b.dataset.page, 10);
+      renderList();
+      root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    el.toggle.addEventListener('click', function () {
+      el.form.hidden = !el.form.hidden;
+      el.thanks.hidden = true;
+    });
+
+    el.form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      el.msg.textContent = '';
+
+      if (!el.form.querySelector('input[name="rating"]:checked')) {
+        el.msg.textContent = 'Please choose a star rating.';
+        return;
+      }
+
+      el.submit.disabled = true;
+      fetch(base, { method: 'POST', body: new FormData(el.form) })
+        .then(function (res) {
+          return res.json().then(function (data) {
+            if (!res.ok) throw data;
+            return data;
+          });
+        })
+        .then(function () {
+          el.form.reset();
+          el.form.hidden = true;
+          el.thanks.hidden = false;
+        })
+        .catch(function (err) {
+          el.msg.textContent = (err && err.error) || 'Something went wrong. Please try again.';
+        })
+        .then(function () {
+          el.submit.disabled = false;
+        });
+    });
+
+    load();
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Smart Reviews",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Customer Reviews"
+    }
+  ]
+}
+{% endschema %}

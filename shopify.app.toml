@@ -7,7 +7,12 @@ name = "Smart Box & Bundle"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products,write_metaobjects,write_metaobject_definitions"
+scopes = "write_products,write_metaobjects,write_metaobject_definitions,write_publications,read_publications"
+
+[app_proxy]
+url = "https://example.com/api/proxy"
+subpath = "sbb-reviews"
+prefix = "apps"
 
 [product.metafields.app.demo_info]
 type = "single_line_text_field"

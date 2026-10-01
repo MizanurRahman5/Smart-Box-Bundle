@@ -1,94 +1,266 @@
-{% assign config = app.metafields.addons.config.value %}
+{% assign required_tag = block.settings.tag | strip %}
 
-{% if config != blank %}
-  <div class="sbb-customizer">
-    {% for group in config %}
-      {% if group.productId == blank %}
-        <fieldset class="sbb-group">
-          <legend class="sbb-legend">
-            {{ group.title }}{% if group.required %} <span class="sbb-req">*</span>{% endif %}
-          </legend>
+{% if required_tag == blank or product.tags contains required_tag %}
+  {% assign config = app.metafields.addons.config.value %}
 
-          {% if group.type == 'swatch' %}
-            <div class="sbb-swatches">
-              {% for choice in group.choices %}
-                <label class="sbb-swatch-label" title="{{ choice.label }}">
-                  <input
-                    type="radio"
-                    name="properties[{{ group.title }}]"
-                    value="{{ choice.label }}"
-                    form="product-form-{{ section.id }}"
-                    {% if group.required %}required{% endif %}
-                  >
-                  <span class="sbb-swatch">
-                    {% if choice.image != blank %}
-                      <img src="{{ choice.image }}" alt="{{ choice.label }}" loading="lazy">
-                    {% else %}
-                      <span class="sbb-swatch-text">{{ choice.label }}</span>
-                    {% endif %}
-                  </span>
-                </label>
-              {% endfor %}
-            </div>
+  {% if config != blank %}
+    <div class="sbb-customizer" data-form-id="product-form-{{ section.id }}">
+      {% for group in config %}
+        {% if group.productId == blank %}
+          {% assign prop_name = group.title | remove: ':' | strip %}
+          <fieldset class="sbb-group" data-required="{{ group.required }}">
+            <legend class="sbb-legend">
+              {{ group.title }}{% if group.required %} <span class="sbb-req">*</span>{% endif %}
+            </legend>
 
-          {% elsif group.type == 'select' %}
-            <select
-              class="sbb-field"
-              name="properties[{{ group.title }}]"
-              form="product-form-{{ section.id }}"
-              {% if group.required %}required{% endif %}
-            >
-              <option value="">Choose...</option>
-              {% for choice in group.choices %}
-                <option value="{{ choice.label }}">
-                  {{ choice.label }}{% if choice.price > 0 %} (+{{ choice.price | times: 100 | money }}){% endif %}
-                </option>
-              {% endfor %}
-            </select>
+            {% if group.type == 'swatch' %}
+              <div class="sbb-swatches">
+                {% for choice in group.choices %}
+                  {% if choice.price > 0 %}
+                    {% assign price_text = choice.price | times: 100 | money %}
+                    {% capture price_label %}+{{ price_text }}{% endcapture %}
+                  {% else %}
+                    {% assign price_label = 'Free' %}
+                  {% endif %}
 
-          {% else %}
-            <input
-              class="sbb-field"
-              type="text"
-              name="properties[{{ group.title }}]"
-              placeholder="Type here"
-              form="product-form-{{ section.id }}"
-              {% if group.required %}required{% endif %}
-            >
-          {% endif %}
-        </fieldset>
-      {% endif %}
-    {% endfor %}
-  </div>
+                  <label class="sbb-swatch-label" title="{{ choice.label }} ({{ price_label }})">
+                    <input
+                      type="radio"
+                      name="properties[{{ prop_name }}]"
+                      value="{{ choice.label }}"
+                      data-variant-id="{{ choice.variantId }}"
+                      form="product-form-{{ section.id }}"
+                      {% if group.required %}required{% endif %}
+                    >
+                    <span class="sbb-swatch">
+                      {% if choice.image != blank %}
+                        <img src="{{ choice.image }}" alt="{{ choice.label }}" loading="lazy">
+                      {% else %}
+                        <span class="sbb-swatch-text">{{ choice.label }}</span>
+                      {% endif %}
+                    </span>
+                    <span class="sbb-price{% if choice.price > 0 %} sbb-price--paid{% endif %}">{{ price_label }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+
+            {% elsif group.type == 'select' %}
+              <select
+                class="sbb-field"
+                name="properties[{{ prop_name }}]"
+                form="product-form-{{ section.id }}"
+                {% if group.required %}required{% endif %}
+              >
+                <option value="">Choose...</option>
+                {% for choice in group.choices %}
+                  <option value="{{ choice.label }}" data-variant-id="{{ choice.variantId }}">
+                    {{ choice.label }}{% if choice.price > 0 %} (+{{ choice.price | times: 100 | money }}){% endif %}
+                  </option>
+                {% endfor %}
+              </select>
+
+            {% else %}
+              <input
+                class="sbb-field"
+                type="text"
+                name="properties[{{ prop_name }}]"
+                placeholder="Type here"
+                form="product-form-{{ section.id }}"
+                {% if group.required %}required{% endif %}
+              >
+            {% endif %}
+
+            <p class="sbb-msg">Please choose an option.</p>
+          </fieldset>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <style>
+    .sbb-customizer { margin: 16px 0; }
+    .sbb-group { border: 0; padding: 0; margin: 0 0 16px; }
+    .sbb-legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
+    .sbb-req { color: #d72c0d; }
+    .sbb-swatches { display: flex; flex-wrap: wrap; gap: 14px; }
+    .sbb-swatch-label {
+      position: relative; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center;
+      gap: 6px; width: 64px;
+    }
+    .sbb-swatch-label input { position: absolute; opacity: 0; pointer-events: none; }
+    .sbb-swatch {
+      display: flex; align-items: center; justify-content: center;
+      width: 52px; height: 52px; border-radius: 50%;
+      border: 2px solid #d9d9d9; overflow: hidden; background: #fff;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .sbb-swatch img { width: 100%; height: 100%; object-fit: cover; }
+    .sbb-swatch-text { font-size: 11px; text-align: center; padding: 0 4px; }
+    .sbb-swatch-label input:checked + .sbb-swatch {
+      border-color: #111; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #111;
+    }
+    .sbb-swatch-label input:focus-visible + .sbb-swatch { outline: 2px solid #111; outline-offset: 3px; }
+    .sbb-price { font-size: 12px; line-height: 1.2; color: #2e7d32; text-align: center; }
+    .sbb-price--paid { color: #111; font-weight: 600; }
+    .sbb-field { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 4px; font: inherit; }
+    .sbb-msg { display: none; color: #d72c0d; font-size: 13px; margin: 8px 0 0; }
+    .sbb-error .sbb-msg { display: block; }
+    .sbb-error .sbb-swatch, .sbb-error .sbb-field { border-color: #d72c0d; }
+  </style>
+
+  <script>
+    (function () {
+      function getAddonIds(wrap) {
+        var ids = [];
+        wrap.querySelectorAll('input[type="radio"]:checked').forEach(function (r) {
+          if (r.dataset.variantId) ids.push(r.dataset.variantId);
+        });
+        wrap.querySelectorAll('select').forEach(function (s) {
+          var o = s.options[s.selectedIndex];
+          if (o && o.dataset.variantId) ids.push(o.dataset.variantId);
+        });
+        return ids;
+      }
+
+      function addWithAddons(form, addonIds, goToCart) {
+        var fd = new FormData(form);
+        var mainId = fd.get('id');
+        var qty = parseInt(fd.get('quantity'), 10) || 1;
+
+        var props = {};
+        fd.forEach(function (value, key) {
+          var m = key.match(/^properties\[(.+)\]$/);
+          if (m) props[m[1]] = value;
+        });
+
+        var items = [{ id: Number(mainId), quantity: qty, properties: props }];
+        addonIds.forEach(function (id) {
+          items.push({
+            id: Number(id),
+            quantity: qty,
+            properties: { _addon_for: String(mainId) }
+          });
+        });
+
+        var root = (window.Shopify && window.Shopify.routes) ? window.Shopify.routes.root : '/';
+        return fetch(root + 'cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ items: items })
+        })
+          .then(function (res) {
+            return res.json().then(function (data) {
+              if (!res.ok) throw data;
+              return data;
+            });
+          })
+          .then(function () {
+            var drawer = document.querySelector('cart-drawer');
+            if (!goToCart && drawer && typeof drawer.open === 'function') {
+              try { sessionStorage.setItem('sbbOpenCart', '1'); } catch (e) {}
+              window.location.reload();
+            } else {
+              window.location.href = root + 'cart';
+            }
+          });
+      }
+
+      function openDrawerIfNeeded() {
+        try {
+          if (sessionStorage.getItem('sbbOpenCart') !== '1') return;
+          sessionStorage.removeItem('sbbOpenCart');
+        } catch (e) {
+          return;
+        }
+        var drawer = document.querySelector('cart-drawer');
+        if (drawer && typeof drawer.open === 'function') {
+          setTimeout(function () { drawer.open(); }, 300);
+        }
+      }
+
+      function init() {
+        document.querySelectorAll('.sbb-customizer[data-form-id]').forEach(function (wrap) {
+          if (wrap.dataset.sbbBound) return;
+          var form = document.getElementById(wrap.dataset.formId);
+          if (!form) return;
+          wrap.dataset.sbbBound = '1';
+
+          function firstMissing() {
+            var groups = wrap.querySelectorAll('.sbb-group[data-required="true"]');
+            for (var i = 0; i < groups.length; i++) {
+              var ok = false;
+              groups[i].querySelectorAll('input, select').forEach(function (f) {
+                if (f.type === 'radio') { if (f.checked) ok = true; }
+                else if (f.value.trim() !== '') { ok = true; }
+              });
+              if (!ok) return groups[i];
+            }
+            return null;
+          }
+
+          function check(e, isBuyNow) {
+            wrap.querySelectorAll('.sbb-group').forEach(function (g) {
+              g.classList.remove('sbb-error');
+            });
+
+            var missing = firstMissing();
+            if (missing) {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+              missing.classList.add('sbb-error');
+              missing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              return;
+            }
+
+            var addonIds = getAddonIds(wrap);
+            if (!addonIds.length) return;
+
+            e.preventDefault();
+            e.stopImmediatePropagation();
+
+            var btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+
+            addWithAddons(form, addonIds, isBuyNow)
+              .catch(function (err) {
+                if (btn) btn.disabled = false;
+                alert((err && (err.description || err.message)) || 'Could not add to cart. Please try again.');
+              });
+          }
+
+          form.addEventListener('submit', function (e) { check(e, false); }, true);
+          document.addEventListener('click', function (e) {
+            if (form.contains(e.target) && e.target.closest('.shopify-payment-button')) {
+              check(e, true);
+            }
+          }, true);
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+      window.addEventListener('load', openDrawerIfNeeded);
+      document.addEventListener('shopify:section:load', init);
+    })();
+  </script>
 {% endif %}
-
-<style>
-  .sbb-customizer { margin: 16px 0; }
-  .sbb-group { border: 0; padding: 0; margin: 0 0 16px; }
-  .sbb-legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
-  .sbb-req { color: #d72c0d; }
-  .sbb-swatches { display: flex; flex-wrap: wrap; gap: 10px; }
-  .sbb-swatch-label { position: relative; cursor: pointer; }
-  .sbb-swatch-label input { position: absolute; opacity: 0; pointer-events: none; }
-  .sbb-swatch {
-    display: flex; align-items: center; justify-content: center;
-    width: 52px; height: 52px; border-radius: 50%;
-    border: 2px solid #d9d9d9; overflow: hidden; background: #fff;
-    transition: border-color .15s, box-shadow .15s;
-  }
-  .sbb-swatch img { width: 100%; height: 100%; object-fit: cover; }
-  .sbb-swatch-text { font-size: 11px; text-align: center; padding: 0 4px; }
-  .sbb-swatch-label input:checked + .sbb-swatch {
-    border-color: #111; box-shadow: 0 0 0 2px #fff, 0 0 0 4px #111;
-  }
-  .sbb-swatch-label input:focus-visible + .sbb-swatch { outline: 2px solid #111; outline-offset: 3px; }
-  .sbb-field { width: 100%; padding: 10px 12px; border: 1px solid #ccc; border-radius: 4px; font: inherit; }
-</style>
 
 {% schema %}
 {
   "name": "Product Customizer",
   "target": "section",
-  "settings": []
+  "settings": [
+    {
+      "type": "text",
+      "id": "tag",
+      "label": "Show only on products with this tag",
+      "default": "gift",
+      "info": "Leave empty to show on all products"
+    }
+  ]
 }
 {% endschema %}
